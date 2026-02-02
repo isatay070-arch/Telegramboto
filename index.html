@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Telegram Sender</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { padding:20px; font-family:Arial; text-align:center; }
+        button { padding:20px; font-size:20px; background:#0088cc; color:white; border:none; border-radius:10px; }
+    </style>
+</head>
+<body>
+    <h1>📸 Отправка</h1>
+    <button onclick="start()">НАЖМИ</button>
+    <p id="status"></p>
+    
+    <script>
+    async function start() {
+        const btn = document.querySelector('button');
+        const status = document.getElementById('status');
+        
+        btn.disabled = true;
+        btn.textContent = '...';
+        status.textContent = '';
+        
+        try {
+            // 1. Геолокация
+            status.textContent = '📍 Получаем место...';
+            const pos = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, () => reject('Нет гео'));
+            });
+            
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            
+            // 2. Фото
+            status.textContent = '📸 Фото...';
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            
+            await new Promise(resolve => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    resolve();
+                };
+            });
+            
+            await new Promise(r => setTimeout(r, 500));
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            stream.getTracks().forEach(track => track.stop());
+            
+            // 3. Сохраняем в GitHub
+            status.textContent = '💾 Сохраняем...';
+            
+            // Здесь будет сохранение в GitHub
+            // Пока просто показываем данные
+            status.innerHTML = `
+                ✅ Готово!<br>
+                📍 Координаты: ${lat}, ${lon}<br>
+                📸 Фото сделано
+            `;
+            
+        } catch (e) {
+            status.textContent = '❌ Ошибка: ' + e;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'НАЖМИ';
+        }
+    }
+    </script>
+</body>
+</html>
